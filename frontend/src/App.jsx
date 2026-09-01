@@ -10,6 +10,7 @@ import TransactionDrawer from './components/ledger/TransactionDrawer';
 import DecisionSimulator from './components/engine/DecisionSimulator';
 import PolicyOptimizer from './components/engine/PolicyOptimizer';
 import DisputeCaseKit from './components/dispute/DisputeCaseKit';
+import Toast from './components/ui/Toast';
 import { fetchDashboard, fetchMetrics, fetchRecentAlerts } from './services/api';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState(null);
 
   const loadData = useCallback(async (isSilent = false) => {
     try {
@@ -149,7 +151,7 @@ export default function App() {
           )}
 
           {activeTab === 'dispute' && (
-            <DisputeCaseKit />
+            <DisputeCaseKit onShowToast={setToast} />
           )}
         </main>
       </div>
@@ -161,6 +163,9 @@ export default function App() {
           onClose={() => setSelectedTxn(null)}
         />
       )}
+
+      {/* Global Toast Notification */}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 }

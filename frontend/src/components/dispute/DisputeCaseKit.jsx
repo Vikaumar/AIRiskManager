@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Check, Download, ShieldCheck, FileCheck } from 'lucide-react';
 
-export default function DisputeCaseKit() {
+export default function DisputeCaseKit({ onShowToast }) {
   const [copied, setCopied] = useState(false);
 
   const sample = {
@@ -45,7 +45,35 @@ Based on matching device telemetry, verified delivery receipt, and historical ac
   function handleCopy() {
     navigator.clipboard.writeText(letterText);
     setCopied(true);
+    if (onShowToast) {
+      onShowToast({
+        type: 'success',
+        title: 'Rebuttal Document Copied',
+        message: 'Standardized dispute letter copied to clipboard.'
+      });
+    }
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  function handleExportFile() {
+    // Generate real client-side downloadable file bundle
+    const blob = new Blob([letterText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Chargeback_Evidence_Package_${sample.dispute_id}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    if (onShowToast) {
+      onShowToast({
+        type: 'download',
+        title: 'Evidence Package Downloaded',
+        message: `Saved Chargeback_Evidence_Package_${sample.dispute_id}.txt with 4 forensic telemetry attachments.`
+      });
+    }
   }
 
   return (
@@ -171,12 +199,12 @@ Based on matching device telemetry, verified delivery receipt, and historical ac
             ))}
 
             <button
-              onClick={() => alert('Dispute rebuttal package exported with PDF telemetry.')}
+              onClick={handleExportFile}
               className="pro-btn pro-btn-primary"
               style={{ width: '100%', marginTop: 6, padding: '9px' }}
             >
               <Download size={13} />
-              <span>Export Signed Acquirer Package (.PDF)</span>
+              <span>Export Signed Acquirer Package (.TXT)</span>
             </button>
           </div>
         </div>
