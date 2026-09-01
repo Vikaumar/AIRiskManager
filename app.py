@@ -223,6 +223,7 @@ async def score_transaction(txn: TransactionInput):
     
     result = model.predict(txn_df)
     row = result.iloc[0]
+    risk_factors = model.explain_transaction(txn.dict())
     
     return {
         "transaction_id": row["transaction_id"],
@@ -232,6 +233,7 @@ async def score_transaction(txn: TransactionInput):
         "recommended_action": row["recommended_action"],
         "amount": float(row["amount"]),
         "category": row["category"],
+        "risk_factors": risk_factors,
     }
 
 

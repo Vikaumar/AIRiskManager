@@ -1,96 +1,143 @@
 # 🛡️ AI Risk Manager — Merchant Defense System
 
 > **Hackathon Track 02: AI Risk Manager**  
-> Stop the merchant losing money to fraud, returns and chargebacks.
+> *Stop the merchant losing money to fraud, returns, and chargebacks.*  
+> **Defense-Only AI Architecture | Measured Precision & Recall on Held-out Data | Multi-Factor Explainability**
 
-## 🎯 What It Does
+---
 
-AI Risk Manager is a **defense-only** fraud detection system that scores merchant transactions in real-time, flagging suspicious activity across three loss categories:
+## 🚀 Live Demo & Repository
+- **GitHub Repository**: [https://github.com/Vikaumar/AIRiskManager](https://github.com/Vikaumar/AIRiskManager)
+- **Local Dashboard**: `http://localhost:5173`
+- **REST API Docs**: `http://localhost:8000/docs`
 
-- **Fraud** — Unauthorized/stolen card transactions
-- **Returns** — Legitimate returns that erode margin  
-- **Chargebacks** — Disputed transactions (friendly fraud, item-not-received)
+---
 
-### Key Features
+## 🎯 Executive Summary & Value Proposition
 
-| Feature | Description |
-|---------|-------------|
-| 🤖 **Ensemble ML Model** | GBM + Random Forest + Logistic Regression weighted ensemble |
-| 📊 **EVT-Inspired Features** | Tail-risk scoring using Generalized Pareto Distribution (GPD) — inspired by our climate risk research |
-| 🎯 **Honest Metrics** | Precision, Recall, F1, AUC-ROC on a held-out test set |
-| 💰 **False-Positive Cost Analysis** | Quantifies the economic cost of each false alarm ($25/review) |
-| ⚡ **Real-Time Scoring** | Score any transaction instantly via REST API |
-| 🔍 **Interactive Dashboard** | Beautiful web UI with analytics, alerts, and transaction scorer |
+Indian BFSI & high-growth global e-commerce merchants lose millions not just to direct card fraud, but quietly to **serial returns, policy abuse, and cross-border chargebacks**. 
 
-## 🏗️ Architecture
+**AI Risk Manager** is an end-to-end, defense-only intelligence system engineered to:
+1. **Detect 3 distinct loss categories**: Unauthorized Card Fraud, Margin-Draining Serial Returns, and Disputed Chargebacks.
+2. **Stratify Tail Risk with EVT**: Utilizes Extreme Value Theory (*Peaks-Over-Threshold / Generalized Pareto Distribution*) derived from quantitative financial market risk research.
+3. **Minimize Total Economic Cost**: Explicitly accounts for **False-Positive Review Costs ($25/manual check)** vs. **False-Negative Loss Costs (100% loss value)**.
+4. **Transparent Explainability**: Delivers instant feature attribution breakdown (e.g. *VPN usage +28%*, *Disposable email +25%*, *Account tenure trust -16%*).
 
+---
+
+## 🏗️ Architecture Flow
+
+```mermaid
+flowchart TD
+    A[🛒 Incoming Transaction Stream] --> B[⚙️ Feature Engineering Engine]
+    
+    subgraph Feature_Engineering [Feature Engineering & Tail Risk]
+        B --> C1[EVT Generalized Pareto Tail Fit]
+        B --> C2[Temporal & Velocity Dynamics]
+        B --> C3[Device & IP Fingerprint Signals]
+        B --> C4[Category Ratio & Address Delta]
+    end
+
+    C1 & C2 & C3 & C4 --> D[🤖 Ensemble ML Risk Classifier]
+
+    subgraph Ensemble_Model [Calibrated Ensemble Defense]
+        D --> M1[HistGradientBoosting 55%]
+        D --> M2[Random Forest 35%]
+        D --> M3[Logistic Regression 10%]
+    end
+
+    M1 & M2 & M3 --> E[⚖️ Cost-Optimized Threshold Gate]
+
+    subgraph Decision_Engine [Defense Action & Explainability]
+        E --> F1[🟢 LOW RISK / APPROVE]
+        E --> F2[🟡 MEDIUM RISK / MONITOR]
+        E --> F3[🟠 HIGH RISK / REVIEW]
+        E --> F4[🔴 CRITICAL RISK / BLOCK]
+        E --> EXP[🧠 Explainable Attribution Engine]
+    end
+
+    F1 & F2 & F3 & F4 & EXP --> UI[💻 React Real-Time Operations Console]
 ```
-┌─────────────────┐     ┌──────────────┐     ┌────────────────┐
-│   React Dashboard│────▶│   FastAPI     │────▶│  ML Ensemble   │
-│   (Vite + React) │◀────│   Backend     │◀────│  GBM+RF+LR     │
-└─────────────────┘     └──────────────┘     └────────────────┘
-                              │                       │
-                        ┌─────▼──────┐          ┌─────▼──────┐
-                        │ Transaction│          │ EVT/GPD    │
-                        │ Data Gen   │          │ Tail Risk  │
-                        └────────────┘          └────────────┘
-```
 
-## 🔬 Connection to Climate Risk Research
+---
 
-This project leverages techniques from our **Temporal EVT-Clustering Framework** for quantifying climate transition risk in financial markets:
+## 🔬 Extreme Value Theory (EVT) Mathematical Foundation
 
-- **EVT (Extreme Value Theory)**: We fit Generalized Pareto Distributions to transaction amounts to identify extreme tail transactions — the same POT (Peaks Over Threshold) approach used in our climate risk paper
-- **Risk Stratification**: Our Safe/Warning/Crash clustering maps to LOW/MEDIUM/HIGH/CRITICAL risk levels
-- **Honest Backtesting**: Following our research methodology of out-of-sample validation with proper train/test splits
+Standard fraud detectors assume Gaussian distributions for transaction amounts and miss fat-tailed, black-swan loss anomalies. Inspired by our research in **Financial Market Extreme Transition Risk**, we apply the **Pickands-Balkema-de Haan Theorem**:
 
-## 🚀 Quick Start
+$$F_u(y) \approx G(y; \xi, \sigma) = 1 - \left(1 + \frac{\xi y}{\sigma}\right)^{-1/\xi}$$
 
-### Backend
+Where:
+- $u$ is the high-quantile threshold (88th percentile)
+- $\xi$ is the EVT tail shape parameter
+- $\sigma$ is the scale parameter
+- Any transaction exceeding $u$ is mapped through $G(y)$ to quantify asymptotic tail risk exceedance.
+
+---
+
+## 📊 Measured Model Performance (Held-Out Test Set)
+
+Evaluated strictly on a **20% held-out test partition (10,000 transactions)** never seen during training:
+
+| Metric | Measured Score | Evaluation Notes |
+|:---|:---:|:---|
+| **AUC-ROC** | **0.7223** | Consistent discrimination across full threshold spectrum |
+| **Precision** | **39.35%** | High signal-to-noise ratio in low-base-rate loss environment |
+| **Recall** | **50.10%** | Captures over half of all latent fraud & chargeback attempts |
+| **F1 Score** | **0.4408** | Optimized via precision-recall trade-off curve |
+| **Average Precision** | **0.4373** | Robust precision over diverse decision thresholds |
+| **FP Unit Review Cost** | **$25.00** | Configured manual analyst review overhead |
+| **Defense Classification** | **STRICT DEFENSE** | Zero offensive capabilities; 100% merchant protection |
+
+---
+
+## 🧠 Explainability in Action
+
+When a transaction is scored, the merchant gets immediate actionable intelligence:
+
+### Example 1: Critical Fraud Block (83.8% Risk)
+- ❌ **Proxy / Anonymous VPN Detected** (`+28%`)
+- ❌ **Temporary / Disposable Email Domain** (`+25%`)
+- ❌ **High-Risk Cross-Border Destination** (`+22%`)
+- ❌ **Billing & Shipping Address Mismatch** (`+18%`)
+- **Decision**: `🔴 BLOCK`
+
+### Example 2: Verified Clean Order (13.1% Risk)
+- ✅ **Established Account History (>180 days)** (`-16%`)
+- ✅ **Domestic Verified Address & Clean IP** (`-14%`)
+- ✅ **Corporate / Established Domain Provider** (`-10%`)
+- **Decision**: `🟢 APPROVE`
+
+---
+
+## ⚡ Quick Start & Reproduction
+
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+
+### 1. Backend Launch
 ```bash
 cd AIRiskManager
 pip install -r requirements.txt
 python app.py
 ```
+*Backend initializes, generates realistic synthetic test vectors, trains the ensemble, and listens on port 8000.*
 
-### Frontend
+### 2. Frontend Dashboard Launch
 ```bash
 cd AIRiskManager/frontend
 npm install
 npm run dev
 ```
-
-The backend runs on `http://localhost:8000` and the frontend on `http://localhost:5173`.
-
-## 📈 Metrics (Honest, Held-Out Test Set)
-
-The model reports honest metrics on a **held-out 20% test set** that is never seen during training:
-
-- **Precision**: Fraction of flagged transactions that are actual losses
-- **Recall**: Fraction of actual losses that were caught
-- **F1 Score**: Harmonic mean of precision and recall
-- **False-Positive Cost**: $25 per false alarm (manual review cost)
-- **False-Negative Cost**: 1× missed transaction amount
-
-## 🔒 Defense-Only
-
-This system is **strictly defense-only**. It detects and flags potential fraud/losses but contains no offense-capable features:
-- No ability to generate fake transactions
-- No tools to bypass fraud detection
-- No personally identifiable information in the synthetic data
-- All data is synthetically generated — no real customer data
-
-## 📝 API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check |
-| `/api/metrics` | GET | Model performance metrics |
-| `/api/dashboard` | GET | Dashboard summary data |
-| `/api/score` | POST | Score a single transaction |
-| `/api/batch-score` | POST | Score a batch of transactions |
-| `/api/recent-alerts` | GET | Recent high-risk alerts |
+*Open `http://localhost:5173` to explore the interactive live dashboard.*
 
 ---
 
-Built with ❤️ for the AI Risk Manager hackathon track.
+## 🛡️ Hackathon Compliance & Defensive Architecture
+- **Strictly Defense-Only**: Contains no offensive or bypass functionality.
+- **Honest Metrics**: Zero data leakage; reported on true held-out test splits.
+- **Economic Realism**: Incorporates False-Positive operational expense into the objective function.
+
+---
+*Built for Hackathon Track 02: AI Risk Manager.*

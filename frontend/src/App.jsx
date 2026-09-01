@@ -836,6 +836,30 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
+                {scoreResult.risk_factors && scoreResult.risk_factors.length > 0 && (
+                  <div style={{ width: '100%', marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--text-accent)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🧠 AI Risk Factor Attribution & Explainability</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 8 }}>
+                      {scoreResult.risk_factors.map((rf, idx) => (
+                        <div key={idx} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '8px 12px', borderRadius: 8,
+                          background: rf.type === 'risk' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)',
+                          border: `1px solid ${rf.type === 'risk' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`
+                        }}>
+                          <span style={{ fontSize: 12, fontWeight: 500 }}>{rf.factor}</span>
+                          <span style={{
+                            fontSize: 11, fontWeight: 800, fontFamily: 'JetBrains Mono',
+                            color: rf.type === 'risk' ? 'var(--risk-critical)' : 'var(--risk-low)'
+                          }}>{rf.impact}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
