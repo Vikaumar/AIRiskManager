@@ -1,26 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './styles/stitch-tokens.css';
-import Sidebar from './components/layout/Sidebar';
-import Header from './components/layout/Header';
-import KPISection from './components/dashboard/KPISection';
-import RiskStratification from './components/dashboard/RiskStratification';
-import HourlyHeatmap from './components/dashboard/HourlyHeatmap';
-import LiveFeed from './components/sentinel/LiveFeed';
-import ExplainabilityModal from './components/inspector/ExplainabilityModal';
-import PolicyCostLab from './components/policy/PolicyCostLab';
-import EvidenceResponder from './components/evidence/EvidenceResponder';
+import './styles/enterprise.css';
+import SidebarNav from './components/layout/SidebarNav';
+import TopNav from './components/layout/TopNav';
+import ExecutiveMetrics from './components/overview/ExecutiveMetrics';
+import ThreatDistribution from './components/overview/ThreatDistribution';
+import IntradayThreatCurve from './components/overview/IntradayThreatCurve';
+import LiveTransactionLedger from './components/ledger/LiveTransactionLedger';
+import TransactionDrawer from './components/ledger/TransactionDrawer';
+import DecisionSimulator from './components/engine/DecisionSimulator';
+import PolicyOptimizer from './components/engine/PolicyOptimizer';
+import DisputeCaseKit from './components/dispute/DisputeCaseKit';
 import { fetchDashboard, fetchMetrics, fetchRecentAlerts } from './services/api';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('overview');
   const [dashboard, setDashboard] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [inspectItem, setInspectItem] = useState(null);
+  const [selectedTxn, setSelectedTxn] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const loadAllData = useCallback(async (isSilent = false) => {
+  const loadData = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) setRefreshing(true);
       const [dash, met, alr] = await Promise.all([
@@ -32,101 +34,133 @@ export default function App() {
       setMetrics(met);
       setAlerts(alr);
       setLoading(false);
-    } catch (err) {
-      console.error('Data sync failed:', err);
+    } catch (e) {
+      console.error('Data sync failed:', e);
     } finally {
       setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
-    loadAllData();
-  }, [loadAllData]);
+    loadData();
+  }, [loadData]);
 
-  const tabTitles = {
-    dashboard: 'Executive Risk Overview',
-    sentinel: 'Live Transaction Sentinel Stream',
-    inspector: 'AI Threat Scorer & Feature Attribution',
-    policy: 'Cost-Aware Policy & Decision Threshold Lab',
-    evidence: 'Automated Chargeback Evidence Rebuttal Kit',
+  // Global Keyboard Shortcuts (1-5 to navigate, Esc to close drawer)
+  useEffect(() => {
+    function handleKeyDown(e) {
+      // Don't trigger shortcut if typing in input/textarea
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+        if (e.key === 'Escape') {
+          e.target.blur();
+        }
+        return;
+      }
+
+      if (e.key === '1') setActiveTab('overview');
+      if (e.key === '2') setActiveTab('ledger');
+      if (e.key === '3') setActiveTab('simulator');
+      if (e.key === '4') setActiveTab('policy');
+      if (e.key === '5') setActiveTab('dispute');
+      if (e.key === 'Escape') setSelectedTxn(null);
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const tabLabels = {
+    overview: 'Executive Threat Overview',
+    ledger: 'Real-Time Transaction Ledger',
+    simulator: 'Inference & Decision Engine',
+    policy: 'Cost & Policy Calibration',
+    dispute: 'Chargeback Dispute Rebuttal',
   };
 
   if (loading) {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'var(--stitch-bg)',
+        background: 'var(--bg-app)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#ffffff'
+        color: 'var(--text-primary)'
       }}>
         <div style={{
-          width: 48,
-          height: 48,
+          width: 36,
+          height: 36,
           borderRadius: '50%',
-          border: '3px solid rgba(99, 102, 241, 0.2)',
-          borderTopColor: 'var(--stitch-accent-primary)',
-          animation: 'stitch-spin 0.8s linear infinite',
-          marginBottom: 16
+          border: '2px solid rgba(99, 102, 241, 0.2)',
+          borderTopColor: '#6366f1',
+          animation: 'spin 0.7s linear infinite',
+          marginBottom: 12
         }}></div>
-        <div style={{ fontSize: 16, fontWeight: 700 }}>Initializing AI Risk Sentinel...</div>
-        <div style={{ fontSize: 12, color: 'var(--stitch-text-muted)', marginTop: 4 }}>Loading EVT GPD tail models & inference pipeline</div>
+        <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>SENTINEL RISK CORE INITIALIZING</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Loading neural ensemble & POT generalized pareto models...</div>
       </div>
     );
   }
 
   return (
-    <div className="stitch-app-layout">
-      {/* Navigation Sidebar */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="app-container">
+      {/* Left Navigation Rail */}
+      <SidebarNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Main Operational Shell */}
-      <div className="stitch-main-shell">
-        <Header
+      {/* Main Operational Window */}
+      <div className="app-main">
+        <TopNav
           isRefreshing={refreshing}
-          onRefresh={() => loadAllData(false)}
-          activeTabName={tabTitles[activeTab] || 'Console'}
+          onRefresh={() => loadData(false)}
+          activeTabLabel={tabLabels[activeTab]}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
 
-        <main className="stitch-content-area">
-          {activeTab === 'dashboard' && (
+        <main className="app-content">
+          {activeTab === 'overview' && (
             <>
-              <KPISection summary={dashboard?.summary} metrics={metrics} />
-              <RiskStratification
+              <ExecutiveMetrics summary={dashboard?.summary} metrics={metrics} />
+              <ThreatDistribution
                 lossBreakdown={dashboard?.loss_breakdown}
                 riskDistribution={dashboard?.risk_distribution}
-                categoryRisk={dashboard?.category_risk}
+                riskHistogram={dashboard?.risk_histogram}
               />
-              <HourlyHeatmap
+              <IntradayThreatCurve
                 hourlyPattern={dashboard?.hourly_pattern}
                 categoryRisk={dashboard?.category_risk}
               />
             </>
           )}
 
-          {activeTab === 'sentinel' && (
-            <LiveFeed
-              onInspectTransaction={(txn) => {
-                setActiveTab('inspector');
-              }}
+          {activeTab === 'ledger' && (
+            <LiveTransactionLedger
+              onSelectTransaction={(txn) => setSelectedTxn(txn)}
+              externalFilter={searchQuery}
             />
           )}
 
-          {activeTab === 'inspector' && (
-            <ExplainabilityModal initialTxn={inspectItem} />
+          {activeTab === 'simulator' && (
+            <DecisionSimulator />
           )}
 
           {activeTab === 'policy' && (
-            <PolicyCostLab metrics={metrics} />
+            <PolicyOptimizer metrics={metrics} />
           )}
 
-          {activeTab === 'evidence' && (
-            <EvidenceResponder />
+          {activeTab === 'dispute' && (
+            <DisputeCaseKit />
           )}
         </main>
       </div>
+
+      {/* Forensic Slide-Out Drawer */}
+      {selectedTxn && (
+        <TransactionDrawer
+          transaction={selectedTxn}
+          onClose={() => setSelectedTxn(null)}
+        />
+      )}
     </div>
   );
 }
