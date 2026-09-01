@@ -1,0 +1,321 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ── Stitch Design Tokens: Surfaces & Depths ── */
+  --stitch-bg: #09090b;
+  --stitch-sidebar: #0e0e12;
+  --stitch-surface-1: #13131a;
+  --stitch-surface-2: #181822;
+  --stitch-surface-3: #1f1f2c;
+  --stitch-surface-elevated: #262636;
+  
+  /* ── Borders & Outlines ── */
+  --stitch-border-subtle: rgba(255, 255, 255, 0.05);
+  --stitch-border-default: rgba(255, 255, 255, 0.09);
+  --stitch-border-strong: rgba(255, 255, 255, 0.16);
+  --stitch-border-focus: rgba(99, 102, 241, 0.45);
+  
+  /* ── Typography & Text Colors ── */
+  --stitch-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --stitch-font-mono: 'JetBrains Mono', monospace;
+  
+  --stitch-text-primary: #f8fafc;
+  --stitch-text-secondary: #94a3b8;
+  --stitch-text-muted: #64748b;
+  --stitch-text-inverse: #09090b;
+  
+  /* ── Risk & Action Palette ── */
+  --stitch-risk-critical: #f43f5e;
+  --stitch-risk-critical-bg: rgba(244, 63, 94, 0.12);
+  --stitch-risk-critical-border: rgba(244, 63, 94, 0.28);
+  
+  --stitch-risk-high: #f97316;
+  --stitch-risk-high-bg: rgba(249, 115, 22, 0.12);
+  --stitch-risk-high-border: rgba(249, 115, 22, 0.28);
+  
+  --stitch-risk-medium: #eab308;
+  --stitch-risk-medium-bg: rgba(234, 179, 8, 0.12);
+  --stitch-risk-medium-border: rgba(234, 179, 8, 0.28);
+  
+  --stitch-risk-low: #10b981;
+  --stitch-risk-low-bg: rgba(16, 185, 129, 0.12);
+  --stitch-risk-low-border: rgba(16, 185, 129, 0.28);
+  
+  /* ── Brand Accents & Gradients ── */
+  --stitch-accent-primary: #6366f1;
+  --stitch-accent-violet: #8b5cf6;
+  --stitch-accent-cyan: #06b6d4;
+  
+  --stitch-gradient-brand: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  --stitch-gradient-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  --stitch-gradient-danger: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+  --stitch-gradient-success: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  
+  /* ── Elevation & Glows ── */
+  --stitch-shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--stitch-border-subtle);
+  --stitch-shadow-elevated: 0 12px 36px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--stitch-border-default);
+  --stitch-glow-brand: 0 0 32px rgba(99, 102, 241, 0.18);
+  --stitch-glow-critical: 0 0 24px rgba(244, 63, 94, 0.22);
+  
+  /* ── Border Radii ── */
+  --stitch-radius-xs: 6px;
+  --stitch-radius-sm: 8px;
+  --stitch-radius-md: 12px;
+  --stitch-radius-lg: 16px;
+  --stitch-radius-xl: 20px;
+  --stitch-radius-full: 9999px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--stitch-font-sans);
+  background-color: var(--stitch-bg);
+  color: var(--stitch-text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Custom Sleek Scrollbar ── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* ── Stitch Container Layout ── */
+.stitch-app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--stitch-bg);
+}
+
+.stitch-sidebar {
+  width: 260px;
+  background: var(--stitch-sidebar);
+  border-right: 1px solid var(--stitch-border-subtle);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+}
+
+.stitch-main-shell {
+  flex: 1;
+  margin-left: 260px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.stitch-header {
+  height: 64px;
+  background: rgba(14, 14, 18, 0.75);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--stitch-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.stitch-content-area {
+  flex: 1;
+  padding: 28px 32px 48px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Glassmorphic Card Engine ── */
+.stitch-card {
+  background: var(--stitch-surface-1);
+  border: 1px solid var(--stitch-border-subtle);
+  border-radius: var(--stitch-radius-md);
+  padding: 20px 24px;
+  box-shadow: var(--stitch-shadow-card);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stitch-card:hover {
+  border-color: var(--stitch-border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--stitch-shadow-elevated);
+}
+
+.stitch-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.stitch-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--stitch-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stitch-card-subtitle {
+  font-size: 12px;
+  color: var(--stitch-text-muted);
+  font-weight: 500;
+}
+
+/* ── Stitch Button Library ── */
+.stitch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--stitch-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--stitch-font-sans);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  outline: none;
+}
+
+.stitch-btn-primary {
+  background: var(--stitch-gradient-brand);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+}
+
+.stitch-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.stitch-btn-secondary {
+  background: var(--stitch-surface-2);
+  color: var(--stitch-text-primary);
+  border: 1px solid var(--stitch-border-default);
+}
+
+.stitch-btn-secondary:hover {
+  background: var(--stitch-surface-3);
+  border-color: var(--stitch-border-strong);
+}
+
+.stitch-btn-danger {
+  background: var(--stitch-risk-critical-bg);
+  color: var(--stitch-risk-critical);
+  border: 1px solid var(--stitch-risk-critical-border);
+}
+
+.stitch-btn-danger:hover {
+  background: rgba(244, 63, 94, 0.22);
+}
+
+/* ── Badges & Chips ── */
+.stitch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--stitch-radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.stitch-badge-critical {
+  background: var(--stitch-risk-critical-bg);
+  color: var(--stitch-risk-critical);
+  border: 1px solid var(--stitch-risk-critical-border);
+}
+
+.stitch-badge-high {
+  background: var(--stitch-risk-high-bg);
+  color: var(--stitch-risk-high);
+  border: 1px solid var(--stitch-risk-high-border);
+}
+
+.stitch-badge-medium {
+  background: var(--stitch-risk-medium-bg);
+  color: var(--stitch-risk-medium);
+  border: 1px solid var(--stitch-risk-medium-border);
+}
+
+.stitch-badge-low {
+  background: var(--stitch-risk-low-bg);
+  color: var(--stitch-risk-low);
+  border: 1px solid var(--stitch-risk-low-border);
+}
+
+/* ── Grid Layouts ── */
+.stitch-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stitch-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stitch-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .stitch-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .stitch-grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .stitch-sidebar { display: none; }
+  .stitch-main-shell { margin-left: 0; }
+  .stitch-header { padding: 0 16px; }
+  .stitch-content-area { padding: 16px; }
+  .stitch-grid-4 { grid-template-columns: 1fr; }
+  .stitch-grid-3 { grid-template-columns: 1fr; }
+}
+
+@keyframes stitch-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.stitch-spin {
+  animation: stitch-spin 0.8s linear infinite;
+}
