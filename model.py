@@ -319,3 +319,129 @@ class FraudDetectionModel:
             factors.append({"factor": "Standard Retail Velocity & Clean Fingerprint", "impact": "-8%", "type": "trust"})
             
         return factors[:4]
+
+    def get_evt_analysis(self, amounts: np.ndarray) -> dict:
+        """
+        Compute EVT Generalized Pareto Distribution analysis for the tail-risk
+        visualizer. Compares GPD tail estimates against Gaussian assumptions.
+        
+        Returns fitted parameters, CDF comparison curves, VaR/CVaR at multiple
+        confidence levels, and stress scenario probability estimates.
+        """
+        from scipy.stats import genpareto, norm
+        
+        amounts = np.asarray(amounts, dtype=float)
+        amounts = amounts[np.isfinite(amounts) & (amounts > 0)]
+        
+        # Fit at multiple thresholds for the interactive slider
+        quantiles = [0.80, 0.85, 0.88, 0.90, 0.92, 0.95]
+        threshold_analyses = []
+        
+        for q in quantiles:
+            threshold = float(np.quantile(amounts, q))
+            exceedances = amounts[amounts > threshold] - threshold
+            
+            if len(exceedances) < 20:
+                continue
+                
+            try:
+                shape, _, scale = genpareto.fit(exceedances, floc=0)
+            except Exception:
+                shape, scale = 0.1, float(np.std(exceedances))
+            
+            # Gaussian fit on full distribution for comparison
+            mu, sigma = float(np.mean(amounts)), float(np.std(amounts))
+            
+            # Generate CDF comparison points in the tail region
+            x_points = np.linspace(threshold, float(np.quantile(amounts, 0.999)), 80)
+            
+            # GPD survival function: P(X > x) for x > threshold
+            gpd_survival = []
+            gauss_survival = []
+            for x in x_points:
+                excess = x - threshold
+                gpd_surv = (1.0 - q) * (1.0 - genpareto.cdf(excess, shape, loc=0, scale=scale))
+                gauss_surv = 1.0 - norm.cdf(x, loc=mu, scale=sigma)
+                gpd_survival.append(float(gpd_surv))
+                gauss_survival.append(float(gauss_surv))
+            
+            # VaR and CVaR at confidence levels
+            confidence_levels = [0.95, 0.99, 0.995, 0.999]
+            var_comparison = []
+            for cl in confidence_levels:
+                # GPD VaR
+                p_excess = (1.0 - cl) / (1.0 - q)
+                if p_excess > 0 and p_excess < 1:
+                    gpd_var = threshold + genpareto.ppf(1.0 - p_excess, shape, loc=0, scale=scale)
+                else:
+                    gpd_var = threshold + scale * 3
+                
+                # Gaussian VaR
+                gauss_var = norm.ppf(cl, loc=mu, scale=sigma)
+                
+                # GPD CVaR (Expected Shortfall)
+                if shape < 1.0:
+                    gpd_cvar = gpd_var / (1.0 - shape) + (scale - shape * threshold) / (1.0 - shape)
+                else:
+                    gpd_cvar = gpd_var * 1.5
+                
+                gauss_cvar = mu + sigma * norm.pdf(norm.ppf(cl)) / (1.0 - cl)
+                
+                var_comparison.append({
+                    "confidence": cl,
+                    "gpd_var": round(float(gpd_var), 2),
+                    "gaussian_var": round(float(gauss_var), 2),
+                    "gpd_cvar": round(float(gpd_cvar), 2),
+                    "gaussian_cvar": round(float(gauss_cvar), 2),
+                    "underestimation_pct": round(
+                        (float(gpd_var) - float(gauss_var)) / max(float(gauss_var), 1) * 100, 1
+                    )
+                })
+            
+            # Stress scenarios: probability of extreme losses
+            stress_levels = [5000, 10000, 25000, 50000]
+            stress_scenarios = []
+            for level in stress_levels:
+                excess = level - threshold
+                if excess > 0:
+                    gpd_prob = (1.0 - q) * (1.0 - genpareto.cdf(excess, shape, loc=0, scale=scale))
+                else:
+                    gpd_prob = 1.0 - q
+                gauss_prob = 1.0 - norm.cdf(level, loc=mu, scale=sigma)
+                
+                ratio = gpd_prob / max(gauss_prob, 1e-20)
+                stress_scenarios.append({
+                    "loss_level": level,
+                    "gpd_probability": float(gpd_prob),
+                    "gaussian_probability": float(gauss_prob),
+                    "ratio": round(float(ratio), 1),
+                })
+            
+            threshold_analyses.append({
+                "quantile": q,
+                "threshold": round(threshold, 2),
+                "n_exceedances": int(len(exceedances)),
+                "gpd_shape": round(float(shape), 4),
+                "gpd_scale": round(float(scale), 4),
+                "gaussian_mu": round(mu, 2),
+                "gaussian_sigma": round(sigma, 2),
+                "x_points": [round(float(x), 2) for x in x_points],
+                "gpd_survival": [round(v, 8) for v in gpd_survival],
+                "gaussian_survival": [round(v, 8) for v in gauss_survival],
+                "var_comparison": var_comparison,
+                "stress_scenarios": stress_scenarios,
+            })
+        
+        return {
+            "n_transactions": int(len(amounts)),
+            "amount_stats": {
+                "mean": round(float(np.mean(amounts)), 2),
+                "median": round(float(np.median(amounts)), 2),
+                "std": round(float(np.std(amounts)), 2),
+                "max": round(float(np.max(amounts)), 2),
+                "p95": round(float(np.quantile(amounts, 0.95)), 2),
+                "p99": round(float(np.quantile(amounts, 0.99)), 2),
+            },
+            "analyses": threshold_analyses,
+        }
+

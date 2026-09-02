@@ -282,6 +282,182 @@ async def get_recent_alerts():
     ].to_dict(orient="records")
 
 
+@app.get("/api/fraud-network")
+async def get_fraud_network():
+    """Build a graph of linked entities from the scored dataset for the fraud ring visualizer."""
+    if not is_ready:
+        raise HTTPException(503, "Model not ready yet")
+    
+    df = scored_dataset
+    
+    # Focus on flagged and high-risk transactions for the network
+    risky = df[df["risk_score"] >= 0.30].copy()
+    if len(risky) > 500:
+        risky = risky.nlargest(500, "risk_score")
+    
+    nodes = []
+    edges = []
+    node_ids = set()
+    
+    # Create transaction nodes
+    for _, row in risky.iterrows():
+        txn_id = str(row["transaction_id"])
+        risk = float(row["risk_score"])
+        level = str(row["risk_level"])
+        
+        nodes.append({
+            "id": txn_id,
+            "type": "transaction",
+            "label": txn_id[-8:],
+            "risk_score": round(risk, 3),
+            "risk_level": level,
+            "amount": round(float(row["amount"]), 2),
+            "category": str(row["category"]),
+            "loss_type": str(row["loss_type"]),
+        })
+        node_ids.add(txn_id)
+    
+    # Create shared-attribute hub nodes and edges
+    # Group by IP risk buckets (simulating shared IP subnets)
+    ip_buckets = {}
+    for _, row in risky.iterrows():
+        ip_bucket = f"IP-{int(row['ip_risk_score'] * 10)}"
+        if ip_bucket not in ip_buckets:
+            ip_buckets[ip_bucket] = []
+        ip_buckets[ip_bucket].append(str(row["transaction_id"]))
+    
+    for ip_id, txns in ip_buckets.items():
+        if len(txns) >= 3:
+            if ip_id not in node_ids:
+                nodes.append({
+                    "id": ip_id,
+                    "type": "ip_cluster",
+                    "label": ip_id,
+                    "risk_score": 0.6,
+                    "risk_level": "MEDIUM",
+                    "count": len(txns),
+                })
+                node_ids.add(ip_id)
+            for txn_id in txns[:15]:
+                edges.append({"source": txn_id, "target": ip_id, "type": "shared_ip"})
+    
+    # Group by device type + VPN usage (simulating device fingerprint clusters)
+    device_clusters = {}
+    for _, row in risky.iterrows():
+        key = f"DEV-{row['device']}-{'vpn' if row['is_vpn'] else 'clean'}"
+        if key not in device_clusters:
+            device_clusters[key] = []
+        device_clusters[key].append(str(row["transaction_id"]))
+    
+    for dev_id, txns in device_clusters.items():
+        if len(txns) >= 5:
+            if dev_id not in node_ids:
+                is_vpn = "vpn" in dev_id
+                nodes.append({
+                    "id": dev_id,
+                    "type": "device_cluster",
+                    "label": dev_id,
+                    "risk_score": 0.75 if is_vpn else 0.4,
+                    "risk_level": "HIGH" if is_vpn else "MEDIUM",
+                    "count": len(txns),
+                })
+                node_ids.add(dev_id)
+            for txn_id in txns[:12]:
+                edges.append({"source": txn_id, "target": dev_id, "type": "shared_device"})
+    
+    # Group by email domain type (disposable emails form clusters)
+    email_clusters = {}
+    for _, row in risky.iterrows():
+        key = f"EMAIL-{row['email_domain_type']}"
+        if key not in email_clusters:
+            email_clusters[key] = []
+        email_clusters[key].append(str(row["transaction_id"]))
+    
+    for email_id, txns in email_clusters.items():
+        if len(txns) >= 4:
+            if email_id not in node_ids:
+                is_disposable = "disposable" in email_id
+                nodes.append({
+                    "id": email_id,
+                    "type": "email_cluster",
+                    "label": email_id.replace("EMAIL-", ""),
+                    "risk_score": 0.8 if is_disposable else 0.3,
+                    "risk_level": "HIGH" if is_disposable else "LOW",
+                    "count": len(txns),
+                })
+                node_ids.add(email_id)
+            for txn_id in txns[:10]:
+                edges.append({"source": txn_id, "target": email_id, "type": "shared_email"})
+    
+    # Group by shipping destination for cross-border rings
+    dest_clusters = {}
+    for _, row in risky.iterrows():
+        if row["shipping_destination"] == "cross_border_high_risk":
+            key = "DEST-high-risk-xborder"
+            if key not in dest_clusters:
+                dest_clusters[key] = []
+            dest_clusters[key].append(str(row["transaction_id"]))
+    
+    for dest_id, txns in dest_clusters.items():
+        if len(txns) >= 3:
+            if dest_id not in node_ids:
+                nodes.append({
+                    "id": dest_id,
+                    "type": "destination_cluster",
+                    "label": "High-Risk Cross-Border",
+                    "risk_score": 0.85,
+                    "risk_level": "HIGH",
+                    "count": len(txns),
+                })
+                node_ids.add(dest_id)
+            for txn_id in txns[:15]:
+                edges.append({"source": txn_id, "target": dest_id, "type": "shared_destination"})
+    
+    # Identify fraud rings: groups of 3+ transactions sharing 2+ attributes
+    ring_count = 0
+    txn_connections = {}
+    for edge in edges:
+        src = edge["source"]
+        if src.startswith("TXN"):
+            if src not in txn_connections:
+                txn_connections[src] = set()
+            txn_connections[src].add(edge["target"])
+    
+    # Find transactions that share multiple hub nodes (likely coordinated)
+    ring_members = set()
+    txn_list = list(txn_connections.keys())
+    for i in range(len(txn_list)):
+        for j in range(i + 1, min(i + 50, len(txn_list))):
+            shared = txn_connections[txn_list[i]] & txn_connections[txn_list[j]]
+            if len(shared) >= 2:
+                ring_members.add(txn_list[i])
+                ring_members.add(txn_list[j])
+    
+    ring_count = len(ring_members)
+    
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "stats": {
+            "total_nodes": len(nodes),
+            "total_edges": len(edges),
+            "transaction_nodes": sum(1 for n in nodes if n["type"] == "transaction"),
+            "hub_nodes": sum(1 for n in nodes if n["type"] != "transaction"),
+            "suspected_ring_members": ring_count,
+        }
+    }
+
+
+@app.get("/api/evt-analysis")
+async def get_evt_analysis():
+    """Get EVT Generalized Pareto Distribution analysis for the tail-risk visualizer."""
+    if not is_ready:
+        raise HTTPException(503, "Model not ready yet")
+    
+    amounts = scored_dataset["amount"].values
+    return model.get_evt_analysis(amounts)
+
+
 # ── Serve Frontend ───────────────────────────────────────────
 frontend_dist = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 if os.path.exists(frontend_dist):

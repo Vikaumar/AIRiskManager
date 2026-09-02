@@ -6,6 +6,9 @@ import {
   Terminal, 
   Sliders, 
   FileCheck2,
+  Network,
+  Activity,
+  Code2,
   Lock
 } from 'lucide-react';
 
@@ -16,6 +19,9 @@ export default function SidebarNav({ activeTab, setActiveTab }) {
     { id: 'simulator', label: 'Decision Engine', shortcut: '3', icon: Terminal },
     { id: 'policy', label: 'Cost Calibration', shortcut: '4', icon: Sliders },
     { id: 'dispute', label: 'Dispute Rebuttal', shortcut: '5', icon: FileCheck2 },
+    { id: 'network', label: 'Threat Network', shortcut: '6', icon: Network },
+    { id: 'evt', label: 'EVT Tail Risk', shortcut: '7', icon: Activity },
+    { id: 'developer', label: 'Developer SDK', shortcut: '8', icon: Code2 },
   ];
 
   return (

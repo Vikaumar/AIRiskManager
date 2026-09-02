@@ -37,3 +37,16 @@ export async function fetchBatchScores(n = 50) {
   if (!res.ok) throw new Error('Failed to fetch batch scores');
   return res.json();
 }
+
+export async function fetchFraudNetwork() {
+  const res = await fetch(`${API_BASE}/fraud-network`);
+  if (!res.ok) throw new Error('Failed to fetch fraud network');
+  return res.json();
+}
+
+export async function fetchEVTAnalysis() {
+  const res = await fetch(`${API_BASE}/evt-analysis`);
+  if (!res.ok) throw new Error('Failed to fetch EVT analysis');
+  return res.json();
+}
+

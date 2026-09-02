@@ -10,6 +10,9 @@ import TransactionDrawer from './components/ledger/TransactionDrawer';
 import DecisionSimulator from './components/engine/DecisionSimulator';
 import PolicyOptimizer from './components/engine/PolicyOptimizer';
 import DisputeCaseKit from './components/dispute/DisputeCaseKit';
+import FraudNetworkGraph from './components/network/FraudNetworkGraph';
+import EVTStressTest from './components/evt/EVTStressTest';
+import DeveloperHub from './components/developer/DeveloperHub';
 import Toast from './components/ui/Toast';
 import { fetchDashboard, fetchMetrics, fetchRecentAlerts } from './services/api';
 
@@ -63,6 +66,9 @@ export default function App() {
       if (e.key === '3') setActiveTab('simulator');
       if (e.key === '4') setActiveTab('policy');
       if (e.key === '5') setActiveTab('dispute');
+      if (e.key === '6') setActiveTab('network');
+      if (e.key === '7') setActiveTab('evt');
+      if (e.key === '8') setActiveTab('developer');
       if (e.key === 'Escape') setSelectedTxn(null);
     }
 
@@ -76,6 +82,9 @@ export default function App() {
     simulator: 'Inference & Decision Engine',
     policy: 'Cost & Policy Calibration',
     dispute: 'Chargeback Dispute Rebuttal',
+    network: 'Fraud Ring Network Topology',
+    evt: 'EVT Tail Risk Stress Test',
+    developer: 'Developer SDK & Webhooks',
   };
 
   if (loading) {
@@ -152,6 +161,18 @@ export default function App() {
 
           {activeTab === 'dispute' && (
             <DisputeCaseKit onShowToast={setToast} />
+          )}
+
+          {activeTab === 'network' && (
+            <FraudNetworkGraph />
+          )}
+
+          {activeTab === 'evt' && (
+            <EVTStressTest />
+          )}
+
+          {activeTab === 'developer' && (
+            <DeveloperHub />
           )}
         </main>
       </div>
