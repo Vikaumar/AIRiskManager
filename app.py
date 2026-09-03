@@ -7,19 +7,28 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.security import APIKeyHeader
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 import pandas as pd
 import numpy as np
 import os
 import json
 import time
+import logging
 from datetime import datetime
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+)
+logger = logging.getLogger("AIRiskManager")
 
 from data_generator import generate_transactions
 from model import FraudDetectionModel
@@ -74,27 +83,48 @@ scored_dataset = None
 is_ready = False
 _cache = {}
 
+# ── API Auth & Security ──────────────────────────────────────
+API_KEY_NAME = "x-api-key"
+API_KEY = "sk_hackathon_demo_key_12345"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != API_KEY:
+        logger.warning(f"Invalid API Key attempt: {api_key}")
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+    return api_key
+
+# ── Exception Handlers ───────────────────────────────────────
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error: {exc}", exc_info=True)
+    return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error on {request.url.path}: {exc.errors()}")
+    return JSONResponse(status_code=422, content={"error": "Validation Error", "details": exc.errors()})
+
 
 # ── Pydantic Models ──────────────────────────────────────────
 class TransactionInput(BaseModel):
-    amount: float
-    category: str = "Electronics"
-    is_new_customer: int = 0
-    customer_age_days: int = 365
-    payment_method: str = "credit_card"
-    device: str = "desktop"
-    session_duration_sec: int = 180
-    pages_viewed: int = 5
-    shipping_destination: str = "domestic"
-    txn_velocity_24h: int = 1
-    ip_risk_score: float = 0.1
-    is_vpn: int = 0
-    email_domain_type: str = "established"
-    billing_shipping_mismatch: int = 0
-
+    amount: float = Field(..., gt=0, description="Transaction amount in USD")
+    category: str = Field("Electronics", min_length=2)
+    is_new_customer: int = Field(0, ge=0, le=1)
+    customer_age_days: int = Field(365, ge=0)
+    payment_method: str = Field("credit_card", min_length=2)
+    device: str = Field("desktop", min_length=2)
+    session_duration_sec: int = Field(180, ge=0)
+    pages_viewed: int = Field(5, ge=1)
+    shipping_destination: str = Field("domestic", min_length=2)
+    txn_velocity_24h: int = Field(1, ge=0)
+    ip_risk_score: float = Field(0.1, ge=0, le=1)
+    is_vpn: int = Field(0, ge=0, le=1)
+    email_domain_type: str = Field("established", min_length=2)
+    billing_shipping_mismatch: int = Field(0, ge=0, le=1)
 
 class BatchScoreRequest(BaseModel):
-    n_transactions: int = 100
+    n_transactions: int = Field(100, gt=0, le=5000)
 
 
 # ── Startup ──────────────────────────────────────────────────
@@ -102,19 +132,19 @@ class BatchScoreRequest(BaseModel):
 async def startup():
     global model, dataset, scored_dataset, is_ready
     
-    print("\n  [*] AI Risk Manager -- Starting up...")
-    print("  [*] Generating synthetic transaction data...")
+    logger.info("AI Risk Manager -- Starting up...")
+    logger.info("Generating synthetic transaction data...")
     
     dataset = generate_transactions(n_total=50000)
     
-    print("  [*] Training fraud detection model...")
+    logger.info("Training fraud detection model...")
     model.train(dataset)
     
-    print("  [*] Scoring all transactions...")
+    logger.info("Scoring all transactions...")
     scored_dataset = model.predict(dataset)
     
     is_ready = True
-    print("  [OK] AI Risk Manager is ready!\n")
+    logger.info("AI Risk Manager is ready!")
 
 
 # ── API Endpoints ────────────────────────────────────────────
@@ -125,7 +155,7 @@ async def health():
 
 
 @app.get("/api/metrics")
-async def get_metrics():
+async def get_metrics(api_key: str = Depends(verify_api_key)):
     """Get model performance metrics (honest, held-out test set)."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
@@ -133,7 +163,7 @@ async def get_metrics():
 
 
 @app.get("/api/dashboard")
-async def get_dashboard():
+async def get_dashboard(api_key: str = Depends(verify_api_key)):
     """Get dashboard summary data (Cached)."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
@@ -227,7 +257,7 @@ async def get_dashboard():
 
 
 @app.post("/api/score")
-async def score_transaction(txn: TransactionInput):
+async def score_transaction(txn: TransactionInput, api_key: str = Depends(verify_api_key)):
     """Score a single transaction for fraud risk."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
@@ -272,7 +302,7 @@ async def score_transaction(txn: TransactionInput):
 
 
 @app.post("/api/batch-score")
-async def batch_score(req: BatchScoreRequest):
+async def batch_score(req: BatchScoreRequest, api_key: str = Depends(verify_api_key)):
     """Generate and score a batch of new random transactions."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
@@ -301,7 +331,7 @@ async def batch_score(req: BatchScoreRequest):
 
 
 @app.get("/api/recent-alerts")
-async def get_recent_alerts():
+async def get_recent_alerts(api_key: str = Depends(verify_api_key)):
     """Get the most recent high-risk transaction alerts."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
@@ -317,7 +347,7 @@ async def get_recent_alerts():
 
 
 @app.get("/api/fraud-network")
-async def get_fraud_network():
+async def get_fraud_network(api_key: str = Depends(verify_api_key)):
     """Build a graph of linked entities from the scored dataset for the fraud ring visualizer (Cached)."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
@@ -489,7 +519,7 @@ async def get_fraud_network():
 
 
 @app.get("/api/evt-analysis")
-async def get_evt_analysis():
+async def get_evt_analysis(api_key: str = Depends(verify_api_key)):
     """Get EVT Generalized Pareto Distribution analysis for the tail-risk visualizer (Cached)."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
