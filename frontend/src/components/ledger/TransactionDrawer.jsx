@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, ShieldAlert, Cpu, Database, AlertCircle, CheckCircle2, FileCode } from 'lucide-react';
+import { X, Copy, Check, ShieldAlert, Cpu, Database, AlertCircle, CheckCircle2, FileCode, Bot } from 'lucide-react';
+import AIInvestigator from '../investigator/AIInvestigator';
 
 export default function TransactionDrawer({ transaction, onClose }) {
   const [activeTab, setActiveTab] = useState('forensics');
   const [copied, setCopied] = useState(false);
+  const [showAI, setShowAI] = useState(false);
 
   if (!transaction) return null;
 
@@ -45,13 +47,22 @@ export default function TransactionDrawer({ transaction, onClose }) {
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="pro-btn pro-btn-secondary"
-            style={{ padding: 6, borderRadius: 'var(--radius-sm)' }}
-          >
-            <X size={14} />
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={() => setShowAI(true)}
+              className="pro-btn pro-btn-primary"
+              style={{ padding: '6px 12px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #6366f1, #a855f7)', border: 'none' }}
+            >
+              <Bot size={14} /> Investigate with AI
+            </button>
+            <button
+              onClick={onClose}
+              className="pro-btn pro-btn-secondary"
+              style={{ padding: 6, borderRadius: 'var(--radius-sm)' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
         </div>
 
         {/* Tab Switcher */}
@@ -214,6 +225,13 @@ export default function TransactionDrawer({ transaction, onClose }) {
           )}
         </div>
       </div>
+      
+      {showAI && (
+        <AIInvestigator 
+          transactionId={transaction.transaction_id} 
+          onClose={() => setShowAI(false)} 
+        />
+      )}
     </div>
   );
 }

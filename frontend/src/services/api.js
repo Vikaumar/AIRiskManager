@@ -55,3 +55,13 @@ export async function fetchEVTAnalysis() {
   return res.json();
 }
 
+export async function fetchAIInvestigation(transactionId) {
+  const res = await fetch(`${API_BASE}/investigate`, {
+    method: 'POST',
+    headers: HEADERS,
+    body: JSON.stringify({ transaction_id: transactionId }),
+  });
+  if (!res.ok) throw new Error('Failed to fetch AI investigation');
+  return res.json();
+}
+
