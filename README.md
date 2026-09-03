@@ -7,9 +7,9 @@
 ---
 
 ## 🚀 Live Demo & Repository
+- **Live Cloud Deployment**: [https://razorpay-sentinel-rgii.onrender.com/](https://razorpay-sentinel-rgii.onrender.com/) *(Hosted on Render)*
 - **GitHub Repository**: [https://github.com/Vikaumar/AIRiskManager](https://github.com/Vikaumar/AIRiskManager)
-- **Local Dashboard**: `http://localhost:5173`
-- **REST API Docs**: `http://localhost:8000/docs`
+- **REST API Docs**: [https://razorpay-sentinel-rgii.onrender.com/docs](https://razorpay-sentinel-rgii.onrender.com/docs)
 
 ---
 
@@ -21,15 +21,16 @@ Indian BFSI & high-growth global e-commerce merchants lose millions not just to 
 1. **Detect 3 distinct loss categories**: Unauthorized Card Fraud, Margin-Draining Serial Returns, and Disputed Chargebacks.
 2. **Stratify Tail Risk with EVT**: Utilizes Extreme Value Theory (*Peaks-Over-Threshold / Generalized Pareto Distribution*) derived from quantitative financial market risk research.
 3. **Minimize Total Economic Cost**: Explicitly accounts for **False-Positive Review Costs ($25/manual check)** vs. **False-Negative Loss Costs (100% loss value)**.
-4. **Transparent Explainability**: Delivers instant feature attribution breakdown (e.g. *VPN usage +28%*, *Disposable email +25%*, *Account tenure trust -16%*).
+4. **Transparent Explainability & GenAI**: Delivers instant feature attribution breakdown and a **Mistral 8x7B powered AI Copilot** to investigate flagged transactions.
 
 ---
 
 ## 🔥 Hackathon Standout Features
 We went beyond standard ML classification to build a true enterprise-grade platform:
-1. **🕸️ Fraud Ring Network Topology**: A Canvas-based force-directed physics graph that automatically maps coordinated attack rings (shared IP subnets, VPN fingerprints, and disposable email clusters) in real-time.
-2. **📉 EVT Tail Risk Visualizer**: A quantitative finance stress-test dashboard comparing standard Gaussian models vs. Generalized Pareto Distribution (GPD) for Black Swan loss events.
-3. **💻 Developer SDK & Webhook Simulator**: A live API sandbox where judges can fire simulated attack vectors (bot surges, friendly fraud) and watch the decision engine score and respond via live JSON logs.
+1. **🤖 Mistral AI Investigator Copilot**: Click any transaction to trigger a live, autonomous LLM forensic investigation. The AI synthesizes telemetry and network signals into an actionable, plain-English executive brief (built with a premium glassmorphic UI).
+2. **🕸️ Fraud Ring Network Topology**: A Canvas-based force-directed physics graph that automatically maps coordinated attack rings (shared IP subnets, VPN fingerprints, and disposable email clusters) in real-time.
+3. **📉 EVT Tail Risk Visualizer**: A quantitative finance stress-test dashboard comparing standard Gaussian models vs. Generalized Pareto Distribution (GPD) for Black Swan loss events.
+4. **💻 Developer SDK & Webhook Simulator**: A live API sandbox where judges can fire simulated attack vectors (bot surges, friendly fraud) and watch the decision engine score and respond via live JSON logs.
 
 ---
 
