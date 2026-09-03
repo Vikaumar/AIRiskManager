@@ -25,6 +25,14 @@ Indian BFSI & high-growth global e-commerce merchants lose millions not just to 
 
 ---
 
+## 🔥 Hackathon Standout Features
+We went beyond standard ML classification to build a true enterprise-grade platform:
+1. **🕸️ Fraud Ring Network Topology**: A Canvas-based force-directed physics graph that automatically maps coordinated attack rings (shared IP subnets, VPN fingerprints, and disposable email clusters) in real-time.
+2. **📉 EVT Tail Risk Visualizer**: A quantitative finance stress-test dashboard comparing standard Gaussian models vs. Generalized Pareto Distribution (GPD) for Black Swan loss events.
+3. **💻 Developer SDK & Webhook Simulator**: A live API sandbox where judges can fire simulated attack vectors (bot surges, friendly fraud) and watch the decision engine score and respond via live JSON logs.
+
+---
+
 ## 🏗️ Architecture Flow
 
 ```mermaid
