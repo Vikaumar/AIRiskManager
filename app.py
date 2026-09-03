@@ -7,16 +7,18 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
 import pandas as pd
 import numpy as np
 import os
 import json
+import time
 from datetime import datetime
 
 from data_generator import generate_transactions
@@ -37,11 +39,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Global State ─────────────────────────────────────────────
+# ── Production Rate Limiter Middleware ───────────────────────
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, requests_per_minute: int = 150):
+        super().__init__(app)
+        self.rate_limit = requests_per_minute
+        self.clients = {}
+
+    async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        
+        if client_ip not in self.clients:
+            self.clients[client_ip] = []
+            
+        # Clean old requests (rolling window of 60 seconds)
+        self.clients[client_ip] = [t for t in self.clients[client_ip] if now - t < 60]
+        
+        if len(self.clients[client_ip]) >= self.rate_limit:
+            return JSONResponse(
+                status_code=429, 
+                content={"error": "Rate limit exceeded. Please slow down."}
+            )
+            
+        self.clients[client_ip].append(now)
+        return await call_next(request)
+
+app.add_middleware(RateLimitMiddleware)
+
+# ── Global State & Cache ─────────────────────────────────────
 model = FraudDetectionModel()
 dataset = None
 scored_dataset = None
 is_ready = False
+_cache = {}
 
 
 # ── Pydantic Models ──────────────────────────────────────────
@@ -103,9 +134,12 @@ async def get_metrics():
 
 @app.get("/api/dashboard")
 async def get_dashboard():
-    """Get dashboard summary data."""
+    """Get dashboard summary data (Cached)."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
+    
+    if "dashboard" in _cache:
+        return _cache["dashboard"]
     
     df = scored_dataset
     
@@ -284,10 +318,13 @@ async def get_recent_alerts():
 
 @app.get("/api/fraud-network")
 async def get_fraud_network():
-    """Build a graph of linked entities from the scored dataset for the fraud ring visualizer."""
+    """Build a graph of linked entities from the scored dataset for the fraud ring visualizer (Cached)."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
     
+    if "network" in _cache:
+        return _cache["network"]
+        
     df = scored_dataset
     
     # Focus on flagged and high-risk transactions for the network
@@ -435,7 +472,7 @@ async def get_fraud_network():
     
     ring_count = len(ring_members)
     
-    return {
+    response = {
         "nodes": nodes,
         "edges": edges,
         "stats": {
@@ -446,16 +483,25 @@ async def get_fraud_network():
             "suspected_ring_members": ring_count,
         }
     }
+    
+    _cache["network"] = response
+    return response
 
 
 @app.get("/api/evt-analysis")
 async def get_evt_analysis():
-    """Get EVT Generalized Pareto Distribution analysis for the tail-risk visualizer."""
+    """Get EVT Generalized Pareto Distribution analysis for the tail-risk visualizer (Cached)."""
     if not is_ready:
         raise HTTPException(503, "Model not ready yet")
     
+    if "evt" in _cache:
+        return _cache["evt"]
+        
     amounts = scored_dataset["amount"].values
-    return model.get_evt_analysis(amounts)
+    response = model.get_evt_analysis(amounts)
+    
+    _cache["evt"] = response
+    return response
 
 
 # ── Serve Frontend ───────────────────────────────────────────
