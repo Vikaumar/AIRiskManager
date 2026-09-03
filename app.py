@@ -152,7 +152,7 @@ async def startup():
 
 # ── API Endpoints ────────────────────────────────────────────
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health():
     return {"status": "healthy", "ready": is_ready, "timestamp": datetime.now().isoformat()}
 
