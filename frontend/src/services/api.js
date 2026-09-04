@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8000/api' : '/api';
 const API_KEY = 'sk_hackathon_demo_key_12345';
 const HEADERS = {
   'Content-Type': 'application/json',
